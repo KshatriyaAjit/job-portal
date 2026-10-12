@@ -1,16 +1,17 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const SavedJobSchema = new Schema(
   {
     userId: {
       type: String,
       required: true,
-      index: true, // Faster queries
+      index: true,
     },
     jobId: {
       type: Schema.Types.ObjectId,
       ref: "Job",
       required: true,
+      index: true,
     },
   },
   { timestamps: true }

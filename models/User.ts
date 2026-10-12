@@ -1,32 +1,54 @@
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 
-export interface IUser extends Document {
+export type UserRole = "candidate" | "recruiter";
+export type RecruiterStatus = "none" | "pending" | "approved" | "rejected";
+
+export interface IUser {
   clerkId: string;
   email: string;
   firstName?: string;
   lastName?: string;
-  role: "candidate" | "recruiter";
-  resume?: string; // URL to resume
-  createdAt: Date;
+  role: UserRole;
+  resume?: string;
+  companyName?: string;
+  recruiterStatus?: RecruiterStatus;
+  recruiterReason?: string;
+  recruiterRequestedAt?: Date;
+  recruiterReviewedAt?: Date;
+  recruiterReviewedBy?: string;
+  recruiterApprovalEmailSentAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-const UserSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema<IUser>(
   {
-    clerkId: { type: String, required: true, unique: true }, // Links to Clerk
+    clerkId: { type: String, required: true, unique: true },
     email: { type: String, required: true },
     firstName: { type: String },
     lastName: { type: String },
-    role: { 
-      type: String, 
-      enum: ["candidate", "recruiter"], 
-      default: "candidate" 
+    role: {
+      type: String,
+      enum: ["candidate", "recruiter"],
+      default: "candidate",
     },
     resume: { type: String },
+    companyName: { type: String },
+    recruiterStatus: {
+      type: String,
+      enum: ["none", "pending", "approved", "rejected"],
+      default: "none",
+    },
+    recruiterReason: { type: String },
+    recruiterRequestedAt: { type: Date },
+    recruiterReviewedAt: { type: Date },
+    recruiterReviewedBy: { type: String },
+    recruiterApprovalEmailSentAt: { type: Date },
   },
   { timestamps: true }
 );
 
-// This trick prevents Next.js from creating the model multiple times
-const User: Model<IUser> = mongoose.models.User || mongoose.model("User", UserSchema);
+const User: Model<IUser> =
+  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 
 export default User;

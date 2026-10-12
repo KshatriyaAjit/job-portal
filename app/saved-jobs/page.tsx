@@ -52,7 +52,7 @@ export default async function SavedJobsPage() {
             <p className="text-gray-500 mt-2 mb-6">Jobs you bookmark will appear here for quick access.</p>
             
             <Link href="/">
-              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition">
+              <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition cursor-pointer">
                 Browse Jobs &rarr;
               </button>
             </Link>

@@ -5,12 +5,14 @@ import { submitApplication } from "@/app/actions";
 import { Loader2, Send, FileText, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
-interface Props {
+interface ApplyButtonProps {
   jobId: string;
-  profile: any;
+  profile: {
+    resumeUrl?: string;
+  } | null;
 }
 
-export default function ApplyButton({ jobId, profile }: Props) {
+export default function ApplyButton({ jobId, profile }: ApplyButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
@@ -24,12 +26,18 @@ export default function ApplyButton({ jobId, profile }: Props) {
 
     setIsLoading(true);
     try {
-      // 👇 Pass coverLetter to server action
-      await submitApplication(jobId, profile.resumeUrl, coverLetter);
-      setHasApplied(true);
-      setIsOpen(false);
-    } catch (error) {
-      alert("Failed to apply. You may have already applied.");
+      const result = await submitApplication(jobId, profile.resumeUrl, coverLetter);
+      if (result.alreadyApplied) {
+        alert("You have already submitted an application for this position.");
+        setHasApplied(true);
+        setIsOpen(false);
+      } else if (result.success) {
+        setHasApplied(true);
+        setIsOpen(false);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to apply.";
+      alert(message);
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +62,7 @@ export default function ApplyButton({ jobId, profile }: Props) {
       {/* Trigger Button */}
       <button 
         onClick={() => setIsOpen(true)}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 flex items-center justify-center gap-2"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer"
       >
         Apply Now 🚀
       </button>
@@ -67,7 +75,7 @@ export default function ApplyButton({ jobId, profile }: Props) {
             {/* Modal Header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
               <h3 className="text-lg font-bold text-gray-900">Complete Application</h3>
-              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl cursor-pointer">✕</button>
             </div>
 
             <div className="p-6 space-y-6">
@@ -106,14 +114,14 @@ export default function ApplyButton({ jobId, profile }: Props) {
               <div className="flex gap-3 pt-2">
                 <button 
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleApply}
                   disabled={isLoading || !profile?.resumeUrl}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? <Loader2 className="animate-spin w-5 h-5" /> : <Send className="w-5 h-5" />}
                   Submit Application

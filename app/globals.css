@@ -11,3 +11,36 @@ body {
   background: rgb(249, 250, 251); /* Light Gray Background */
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  summary,
+  a[href],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  select:disabled,
+  input[type="checkbox"]:disabled,
+  input[type="radio"]:disabled,
+  input[type="button"]:disabled,
+  input[type="submit"]:disabled,
+  input[type="reset"]:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Rich text editor Quill dropdown and button controls */
+  .ql-snow .ql-picker-label,
+  .ql-snow .ql-picker-item {
+    cursor: pointer;
+  }
+}

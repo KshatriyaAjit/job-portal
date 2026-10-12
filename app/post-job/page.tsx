@@ -5,12 +5,24 @@ import { createJob } from "@/app/actions"; // Imports the Server Action
 import RichTextEditor from "@/components/RichTextEditor";
 import { useRouter } from "next/navigation";
 
+import { AlertCircle, Loader2 } from "lucide-react";
+
 export default function PostJobPage() {
   const router = useRouter();
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(formData: FormData) {
+    setErrorMessage(null);
+
+    // Client-side validation: verify rich text has non-whitespace content
+    const plainText = description.replace(/<[^>]*>/g, " ").trim();
+    if (!plainText) {
+      setErrorMessage("Job description cannot be empty.");
+      return;
+    }
+
     setIsSubmitting(true);
     
     // Append the rich text description to the form data manually
@@ -22,11 +34,11 @@ export default function PostJobPage() {
       if (result.success) {
         router.push("/dashboard");
       }
-    
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Submission Error:", error);
+      const msg = error instanceof Error ? error.message : "Failed to post job. Please try again.";
+      setErrorMessage(msg);
       setIsSubmitting(false);
-      alert("Failed to post job. Please try again.");
     }
   }
 
@@ -36,6 +48,17 @@ export default function PostJobPage() {
       
       <form action={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
         
+        {/* Error Alert */}
+        {errorMessage && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 text-red-800 text-sm">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Cannot Post Job</p>
+              <p className="mt-0.5">{errorMessage}</p>
+            </div>
+          </div>
+        )}
+
         {/* Title */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">Job Title</label>
@@ -80,6 +103,8 @@ export default function PostJobPage() {
               type="number" 
               name="salary" 
               placeholder="e.g. 80000"
+              min="1"
+              max="50000000"
               required 
               className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" 
             />
@@ -88,7 +113,7 @@ export default function PostJobPage() {
             <label className="block text-sm font-bold text-gray-700 mb-1">Job Type</label>
             <select 
               name="jobType" 
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
             >
               <option value="Full-time">Full-time</option>
               <option value="Part-time">Part-time</option>
@@ -101,7 +126,6 @@ export default function PostJobPage() {
         {/* Rich Text Description */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">Job Description</label>
-          {/* 👇 Using our new component */}
           <RichTextEditor value={description} onChange={setDescription} />
         </div>
 
@@ -109,9 +133,16 @@ export default function PostJobPage() {
           <button 
             type="submit" 
             disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white font-bold py-3.5 rounded-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isSubmitting ? "Posting..." : "Post Job Now"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Posting Job Listing...</span>
+              </>
+            ) : (
+              <span>Post Job Now</span>
+            )}
           </button>
         </div>
 

@@ -29,14 +29,14 @@ export default function SavedJobButton({ jobId, initialIsSaved }: SavedJobButton
     } catch (error) {
       // 3. Revert if it fails
       setIsSaved(!newState);
-      console.error("Failed to save job");
+      console.error("Failed to save job:", error);
     }
   };
 
   return (
     <button
       onClick={handleToggle}
-      className="p-2 rounded-full hover:bg-red-50 transition z-10 relative"
+      className="p-2 rounded-full hover:bg-red-50 transition z-10 relative cursor-pointer"
       title={isSaved ? "Unsave Job" : "Save Job"}
     >
       <Heart

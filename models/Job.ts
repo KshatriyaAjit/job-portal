@@ -1,15 +1,17 @@
 import mongoose, { Document, Model } from "mongoose";
 
 export interface IJob extends Document {
+  _id: mongoose.Types.ObjectId;
   title: string;
   description: string;
   companyName: string;
   location: string;
   salary: number;
   jobType: string;
-  clerkId: string; // The ID of the Recruiter who posted it
+  clerkId: string;
   createdAt: Date;
-  views: number; // 👈 Added views field to interface
+  updatedAt: Date;
+  views: number;
 }
 
 const JobSchema = new mongoose.Schema(
@@ -18,19 +20,21 @@ const JobSchema = new mongoose.Schema(
     description: { type: String, required: true },
     companyName: { type: String, required: true },
     location: { type: String, required: true },
-    jobType: { 
-      type: String, 
-      required: true, 
+    jobType: {
+      type: String,
+      required: true,
       enum: ["Full-time", "Part-time", "Contract", "Internship"],
-      default: "Full-time" 
+      default: "Full-time",
     },
     salary: { type: Number, required: true },
-    clerkId: { type: String, required: true }, // We link the job to the user
-    views: { type: Number, default: 0 }, // 👈 Added views field to schema with default 0
+    clerkId: { type: String, required: true, index: true },
+    views: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
-const Job: Model<IJob> = mongoose.models.Job || mongoose.model("Job", JobSchema);
+JobSchema.index({ createdAt: -1 });
+
+const Job: Model<IJob> = mongoose.models.Job || mongoose.model<IJob>("Job", JobSchema);
 
 export default Job;

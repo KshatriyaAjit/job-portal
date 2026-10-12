@@ -1,27 +1,20 @@
 import Link from "next/link";
 import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
-import { currentUser, auth } from "@clerk/nextjs/server"; 
-import { Briefcase, ShieldAlert } from "lucide-react"; // 👈 Added ShieldAlert icon
+import { currentUser } from "@clerk/nextjs/server"; 
+import { Briefcase, ShieldAlert } from "lucide-react";
+import { getAuthenticatedUser, isConfiguredAdmin } from "@/lib/auth";
 
 export default async function Navbar() {
-  // 1. Light check: Just get the ID first
-  const { userId } = await auth();
+  const authContext = await getAuthenticatedUser();
+  const userRole = authContext?.role;
 
-  // 2. Safe check: Try to fetch full user data
-  let user = null;
-  if (userId) {
-    try {
-      user = await currentUser();
-    } catch (error) {
-      console.error("Navbar Error: Failed to fetch user data", error);
-    }
+  // Check admin status against server-configured admin email
+  let isAdmin = false;
+  if (authContext) {
+    const user = await currentUser();
+    const primaryEmail = user?.emailAddresses?.[0]?.emailAddress;
+    isAdmin = isConfiguredAdmin(primaryEmail);
   }
-
-  // 3. Safely access the role & check for Admin Status
-  const userRole = user?.unsafeMetadata?.role as string | undefined;
-  
-  // 👇 CHECK IF ADMIN
-  const isAdmin = user?.emailAddresses[0]?.emailAddress === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -39,22 +32,23 @@ export default async function Navbar() {
         {/* Right Actions */}
         <div className="flex items-center gap-6">
           <SignedOut>
-            <Link href="/recruiter-login">
-              <button className="text-gray-600 font-medium hover:text-blue-600 transition cursor-pointer">
-                Recruiter Login
-              </button>
+            <Link 
+              href="/recruiter-login" 
+              className="text-gray-600 font-medium hover:text-blue-600 transition"
+            >
+              Recruiter Login
             </Link>
 
-            <Link href="/candidate-login">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-full font-bold transition shadow-sm hover:shadow-md">
-                Login
-              </button>
+            <Link 
+              href="/candidate-login" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full font-bold transition shadow-sm hover:shadow-md text-sm"
+            >
+              Candidate Login
             </Link>
           </SignedOut>
 
           <SignedIn>
-            
-            {/* 👇 ADMIN LINK (Only visible to Admin) */}
+            {/* ADMIN LINK (Only visible to Admin) */}
             {isAdmin && (
               <Link 
                 href="/admin" 
@@ -65,42 +59,42 @@ export default async function Navbar() {
               </Link>
             )}
 
-            {/* Recruiter Links */}
+            {/* Recruiter Navigation */}
             {userRole === "recruiter" && (
               <>
                 <Link
                   href="/dashboard"
-                  className="text-gray-600 font-medium hover:text-blue-600"
+                  className="text-gray-600 font-medium hover:text-blue-600 transition"
                 >
-                  Dashboard
+                  Recruiter Dashboard
                 </Link>
                 <Link
                   href="/post-job"
-                  className="text-gray-600 font-medium hover:text-blue-600"
+                  className="text-gray-600 font-medium hover:text-blue-600 transition"
                 >
-                  Post Job
+                  Post a Job
                 </Link>
               </>
             )}
 
-            {/* Candidate Links (Show this if role is NOT recruiter) */}
+            {/* Candidate Navigation (Rendered when user is NOT a recruiter) */}
             {userRole !== "recruiter" && (
               <>
                 <Link
                   href="/my-applications"
-                  className="text-gray-600 font-medium hover:text-blue-600"
+                  className="text-gray-600 font-medium hover:text-blue-600 transition"
                 >
                   My Applications
                 </Link>
                 <Link
                   href="/saved-jobs"
-                  className="text-gray-600 font-medium hover:text-blue-600"
+                  className="text-gray-600 font-medium hover:text-blue-600 transition"
                 >
                   Saved Jobs
                 </Link>
                 <Link
                   href="/profile"
-                  className="text-gray-600 font-medium hover:text-blue-600"
+                  className="text-gray-600 font-medium hover:text-blue-600 transition"
                 >
                   My Profile
                 </Link>

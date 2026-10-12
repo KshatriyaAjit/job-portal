@@ -5,9 +5,12 @@ import Profile from "@/models/Profile";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import ApplyButton from "@/components/ApplyButton";
 import { ArrowRight, Briefcase, MapPin } from "lucide-react";
+import { sanitizeRichText } from "@/lib/sanitize";
+import { getAuthenticatedUser } from "@/lib/auth";
+import mongoose from "mongoose";
 
 interface JobPageProps {
   params: Promise<{ id: string }>;
@@ -15,19 +18,22 @@ interface JobPageProps {
 
 export default async function JobDetailsPage({ params }: JobPageProps) {
   const { id } = await params;
+
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    notFound();
+  }
   
   const { userId } = await auth();
-  const user = await currentUser();
-  const userRole = user?.unsafeMetadata?.role as string | undefined;
+  const authContext = await getAuthenticatedUser();
+  const userRole = authContext?.role;
 
   await connectDB();
   
   // 1. Fetch Current Job and Increment Views
-  // Use findByIdAndUpdate to increment views atomically
   const job = await Job.findByIdAndUpdate(
     id,
     { $inc: { views: 1 } },
-    { new: true } // Return the updated document
+    { new: true }
   );
   
   if (!job) notFound();
@@ -106,7 +112,7 @@ export default async function JobDetailsPage({ params }: JobPageProps) {
                       <h3 className="text-xl font-bold mb-4 text-gray-900">Job Description</h3>
                       <div 
                           className="prose max-w-none text-gray-600"
-                          dangerouslySetInnerHTML={{ __html: job.description }} 
+                          dangerouslySetInnerHTML={{ __html: sanitizeRichText(job.description) }} 
                       />
                   </div>
 
@@ -116,7 +122,7 @@ export default async function JobDetailsPage({ params }: JobPageProps) {
                           <div className="bg-gray-50 p-6 rounded-xl text-center border border-gray-200">
                           <p className="mb-4 text-gray-600 font-medium">Sign in to apply for this position.</p>
                           <SignInButton mode="modal">
-                              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition shadow-sm hover:shadow-md">
+                              <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full font-bold transition shadow-sm hover:shadow-md cursor-pointer">
                               Sign In to Apply
                               </button>
                           </SignInButton>

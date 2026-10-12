@@ -4,23 +4,34 @@ import { useState } from "react";
 import { User, Mail, Edit2, Plus, Github, Linkedin, FileText } from "lucide-react";
 import ProfileForm from "./ProfileForm";
 
-interface Props {
-  profile: any; // The profile data from DB
+export interface ProfileData {
+  _id?: string;
+  userId: string;
+  email: string;
+  bio?: string;
+  skills?: string[];
+  resumeUrl?: string;
+  linkedin?: string;
+  github?: string;
+  portfolio?: string;
+}
+
+interface ProfileWrapperProps {
+  profile: ProfileData | null;
   userId: string;
   userEmail: string;
 }
 
-export default function ProfileWrapper({ profile, userId, userEmail }: Props) {
-  // Logic: If no profile exists, show the "Empty" state which prompts to edit
+export default function ProfileWrapper({ profile, userId, userEmail }: ProfileWrapperProps) {
   const [isEditing, setIsEditing] = useState(false);
 
   // 1. EDIT MODE
   if (isEditing) {
     return (
       <ProfileForm 
-        initialData={profile || { email: userEmail }} 
+        initialData={profile || { email: userEmail, userId }} 
         userId={userId} 
-        onSuccess={() => setIsEditing(false)} // Go back to View/Card
+        onSuccess={() => setIsEditing(false)}
         onCancel={() => setIsEditing(false)} 
       />
     );
@@ -35,11 +46,11 @@ export default function ProfileWrapper({ profile, userId, userEmail }: Props) {
         </div>
         <h2 className="text-2xl font-bold text-gray-900">Build Your Candidate Profile</h2>
         <p className="text-gray-500 mt-2 mb-8 max-w-md mx-auto">
-          Create a profile once to enable "Quick Apply" for thousands of jobs. Add your bio, skills, and resume.
+          Create a profile once to enable &quot;Quick Apply&quot; for thousands of jobs. Add your bio, skills, and resume.
         </p>
         <button 
           onClick={() => setIsEditing(true)}
-          className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition flex items-center gap-2 mx-auto"
+          className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition flex items-center gap-2 mx-auto cursor-pointer"
         >
           <Plus className="w-5 h-5" />
           Create My Profile
@@ -67,7 +78,7 @@ export default function ProfileWrapper({ profile, userId, userEmail }: Props) {
         </div>
         <button 
           onClick={() => setIsEditing(true)}
-          className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition"
+          className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition cursor-pointer"
         >
           <Edit2 className="w-4 h-4" /> Edit Details
         </button>
@@ -107,13 +118,23 @@ export default function ProfileWrapper({ profile, userId, userEmail }: Props) {
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Social Links</h3>
             {profile.linkedin ? (
-              <a href={profile.linkedin} target="_blank" className="flex items-center gap-3 text-gray-700 hover:text-blue-600 transition p-3 rounded-lg border border-gray-200 hover:border-blue-300">
+              <a 
+                href={profile.linkedin} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-gray-700 hover:text-blue-600 transition p-3 rounded-lg border border-gray-200 hover:border-blue-300"
+              >
                 <Linkedin className="w-5 h-5 text-blue-600" /> LinkedIn Profile
               </a>
             ) : <p className="text-sm text-gray-400">No LinkedIn added</p>}
 
             {profile.github ? (
-              <a href={profile.github} target="_blank" className="flex items-center gap-3 text-gray-700 hover:text-black transition p-3 rounded-lg border border-gray-200 hover:border-gray-400">
+              <a 
+                href={profile.github} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-gray-700 hover:text-black transition p-3 rounded-lg border border-gray-200 hover:border-gray-400"
+              >
                 <Github className="w-5 h-5" /> GitHub Profile
               </a>
             ) : <p className="text-sm text-gray-400">No GitHub added</p>}
@@ -136,6 +157,7 @@ export default function ProfileWrapper({ profile, userId, userEmail }: Props) {
                 <a 
                   href={profile.resumeUrl} 
                   target="_blank" 
+                  rel="noopener noreferrer"
                   className="text-green-700 font-bold text-sm hover:underline"
                 >
                   View

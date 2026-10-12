@@ -18,7 +18,7 @@ export default function CandidateLoginPage() {
       <div className="relative z-10 bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4">
         
         {/* CLOSE BUTTON */}
-        <Link href="/" className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+        <Link href="/" className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition cursor-pointer">
           <X className="w-6 h-6" />
         </Link>
 

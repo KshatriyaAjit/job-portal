@@ -1,42 +1,64 @@
 "use client";
 
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Search, MapPin, X } from "lucide-react"; 
+import { useState, useEffect } from "react";
+import { Search, MapPin, X } from "lucide-react";
+import { buildSearchPath } from "@/lib/search-params";
 
 export default function SearchBox() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const { replace } = useRouter();
+  const router = useRouter();
 
-  const [term, setTerm] = useState(searchParams.get("query")?.toString() || "");
-  const [location, setLocation] = useState(searchParams.get("location")?.toString() || "");
+  const urlQuery = searchParams.get("query") || "";
+  const urlLocation = searchParams.get("location") || "";
 
-  function handleSearch() {
-    const params = new URLSearchParams(searchParams);
-    
-    if (term) params.set("query", term);
-    else params.delete("query");
+  const [term, setTerm] = useState(urlQuery);
+  const [location, setLocation] = useState(urlLocation);
 
-    if (location) params.set("location", location);
-    else params.delete("location");
+  // Keep input fields synchronized with URL parameters (e.g. Back/Forward, Quick Filters)
+  useEffect(() => {
+    setTerm(urlQuery);
+  }, [urlQuery]);
 
-    replace(`${pathname}?${params.toString()}`);
+  useEffect(() => {
+    setLocation(urlLocation);
+  }, [urlLocation]);
+
+  function handleSearch(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+
+    const nextPath = buildSearchPath(pathname, searchParams, {
+      query: term.trim() || null,
+      location: location.trim() || null,
+      page: null, // Always reset to page 1 on new search
+    });
+
+    router.push(nextPath);
   }
 
-  function clearFilters() {
+  function clearSearchInputs() {
     setTerm("");
     setLocation("");
-    replace(pathname);
+
+    // Clears ONLY query and location, preserving salary, type, sort
+    const nextPath = buildSearchPath(pathname, searchParams, {
+      query: null,
+      location: null,
+      page: null,
+    });
+
+    router.push(nextPath);
   }
 
+  const hasSearchInput = Boolean(term || location || urlQuery || urlLocation);
+
   return (
-    <div className="bg-white p-4 rounded-lg shadow-xl max-w-4xl mx-auto">
+    <form onSubmit={handleSearch} className="bg-white p-4 rounded-xl shadow-xl max-w-4xl mx-auto">
       <div className="flex flex-col md:flex-row gap-4">
-        
         {/* Keyword Input */}
         <div className="flex-1 relative group">
-          <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400 group-focus-within:text-blue-600" />
+          <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition" />
           <input
             className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-900 placeholder-gray-500"
             placeholder="Job title, keywords, or company"
@@ -44,10 +66,10 @@ export default function SearchBox() {
             onChange={(e) => setTerm(e.target.value)}
           />
         </div>
-        
+
         {/* Location Input */}
         <div className="flex-1 relative group">
-          <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-gray-400 group-focus-within:text-blue-600" />
+          <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition" />
           <input
             className="w-full pl-10 px-4 py-3 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all text-gray-900 placeholder-gray-500"
             placeholder="City, state, or 'Remote'"
@@ -56,26 +78,27 @@ export default function SearchBox() {
           />
         </div>
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <div className="flex gap-2">
-          <button 
-            onClick={handleSearch} 
-            className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-sm"
+          <button
+            type="submit"
+            className="px-8 py-3 rounded-md bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-sm active:scale-98 cursor-pointer"
           >
             Find Jobs
           </button>
-          
-          {(term || location) && (
-            <button 
-              onClick={clearFilters}
-              className="px-4 py-3 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition-all"
-              title="Clear Filters"
+
+          {hasSearchInput && (
+            <button
+              type="button"
+              onClick={clearSearchInputs}
+              className="px-4 py-3 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition-all flex items-center justify-center cursor-pointer"
+              title="Clear Search"
             >
               <X className="h-5 w-5" />
             </button>
           )}
         </div>
       </div>
-    </div>
+    </form>
   );
 }

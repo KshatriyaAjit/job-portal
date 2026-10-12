@@ -1,101 +1,148 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { buildSearchPath } from "@/lib/search-params";
+
+interface FilterDef {
+  label: string;
+  key: "location" | "type" | "query" | "minSalary";
+  val: string;
+}
 
 export default function QuickFilters() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showMore, setShowMore] = useState(false);
 
-  // Check if any filters are currently active
-  const hasFilters = searchParams.toString().length > 0;
-
-  // 1. Primary Filters (Always Visible)
-  const primaryFilters = [
-    { label: "🌎 Remote", value: "location=Remote" },
-    { label: "💻 Full-time", value: "type=Full-time" },
-    { label: "🎓 Internship", value: "type=Internship" },
-    { label: "⚙️ Engineering", value: "query=Engineering" },
-    { label: "🎨 Design", value: "query=Design" },
+  const primaryFilters: FilterDef[] = [
+    { label: "🌎 Remote", key: "location", val: "Remote" },
+    { label: "💻 Full-time", key: "type", val: "Full-time" },
+    { label: "🎓 Internship", key: "type", val: "Internship" },
+    { label: "⚙️ Engineering", key: "query", val: "Engineering" },
+    { label: "🎨 Design", key: "query", val: "Design" },
   ];
 
-  // 2. Extra Filters (Hidden inside "More")
-  const extraFilters = [
-    { label: "💰 $100k+", value: "minSalary=100000" },
-    { label: "📝 Contract", value: "type=Contract" },
-    { label: "🚀 Startup", value: "query=Startup" },
-    { label: "🧠 Data Science", value: "query=Data" },
-    { label: "📱 Mobile Dev", value: "query=Mobile" },
-    { label: "👔 Management", value: "query=Manager" },
+  const extraFilters: FilterDef[] = [
+    { label: "💰 $100k+", key: "minSalary", val: "100000" },
+    { label: "📝 Contract", key: "type", val: "Contract" },
+    { label: "🚀 Startup", key: "query", val: "Startup" },
+    { label: "🧠 Data Science", key: "query", val: "Data" },
+    { label: "📱 Mobile Dev", key: "query", val: "Mobile" },
+    { label: "👔 Management", key: "query", val: "Manager" },
   ];
 
-  const handleFilterClick = (filterValue: string) => {
-    // Simple logic: Push the new URL
-    router.push(`/?${filterValue}`);
-  };
+  function isFilterActive(filter: FilterDef): boolean {
+    if (filter.key === "type") {
+      const activeTypes = searchParams.get("type")?.split(",").map((s) => s.trim()) || [];
+      return activeTypes.includes(filter.val);
+    }
+    return searchParams.get(filter.key) === filter.val;
+  }
 
-  const clearAll = () => {
-    router.push("/");
-  };
+  function handleFilterToggle(filter: FilterDef) {
+    const currentlyActive = isFilterActive(filter);
+
+    let nextValue: string | null = null;
+    if (filter.key === "type") {
+      const currentTypes = searchParams.get("type")?.split(",").map((s) => s.trim()).filter(Boolean) || [];
+      if (currentlyActive) {
+        const remaining = currentTypes.filter((t) => t !== filter.val);
+        nextValue = remaining.length > 0 ? remaining.join(",") : null;
+      } else {
+        nextValue = [...currentTypes, filter.val].join(",");
+      }
+    } else {
+      nextValue = currentlyActive ? null : filter.val;
+    }
+
+    const nextPath = buildSearchPath(pathname, searchParams, {
+      [filter.key]: nextValue,
+      page: null, // Reset to first page on filter toggle
+    });
+
+    router.push(nextPath);
+  }
+
+  function handleClearAll() {
+    router.push(pathname);
+  }
+
+  const hasAnyFilter = Boolean(
+    searchParams.get("query") ||
+    searchParams.get("location") ||
+    searchParams.get("type") ||
+    searchParams.get("minSalary")
+  );
 
   return (
     <div className="flex flex-col items-center gap-4 mt-8">
-      
-      {/* Filter Row */}
-      <div className="flex flex-wrap justify-center gap-3 animate-fade-in-up">
-        <span className="text-blue-100 text-sm font-medium pt-2 hidden md:block opacity-80">
+      {/* Primary Row */}
+      <div className="flex flex-wrap justify-center gap-2.5 max-w-4xl mx-auto px-4">
+        <span className="text-blue-100 text-sm font-semibold pt-2 hidden md:block opacity-90">
           Trending:
         </span>
-        
-        {/* Render Primary Filters */}
-        {primaryFilters.map((filter) => (
-          <button
-            key={filter.label}
-            onClick={() => handleFilterClick(filter.value)}
-            className="bg-white/10 hover:bg-white/20 text-white px-5 py-2 rounded-full text-sm font-medium transition border border-white/20 backdrop-blur-md shadow-sm hover:shadow-md hover:scale-105 active:scale-95"
-          >
-            {filter.label}
-          </button>
-        ))}
 
-        {/* "More" Toggle Button */}
+        {primaryFilters.map((filter) => {
+          const active = isFilterActive(filter);
+          return (
+            <button
+              key={filter.label}
+              onClick={() => handleFilterToggle(filter)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition border shadow-sm cursor-pointer ${
+                active
+                  ? "bg-white text-blue-700 font-bold border-white shadow-md scale-105"
+                  : "bg-white/10 hover:bg-white/20 text-white border-white/20 hover:scale-105"
+              }`}
+            >
+              {filter.label}
+            </button>
+          );
+        })}
+
         <button
           onClick={() => setShowMore(!showMore)}
-          className="bg-white/20 hover:bg-white/30 text-white px-5 py-2 rounded-full text-sm font-bold transition border border-white/30 backdrop-blur-md flex items-center gap-1"
+          className="text-blue-100 hover:text-white text-sm font-medium flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-white/10 transition cursor-pointer"
         >
           {showMore ? "Less" : "More"}
           {showMore ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
+
+        {hasAnyFilter && (
+          <button
+            onClick={handleClearAll}
+            className="flex items-center gap-1 text-xs text-red-200 hover:text-white bg-red-500/20 hover:bg-red-500/40 border border-red-300/30 px-3 py-1.5 rounded-full transition cursor-pointer"
+            title="Clear all active filters"
+          >
+            <X className="w-3.5 h-3.5" />
+            Clear All
+          </button>
+        )}
       </div>
 
-      {/* Expanded Filters Section */}
+      {/* Expanded Row */}
       {showMore && (
-        <div className="flex flex-wrap justify-center gap-3 animate-fade-in-down max-w-3xl">
-          {extraFilters.map((filter) => (
-            <button
-              key={filter.label}
-              onClick={() => handleFilterClick(filter.value)}
-              className="bg-white/5 hover:bg-white/15 text-blue-50 px-4 py-1.5 rounded-full text-sm transition border border-white/10 backdrop-blur-md"
-            >
-              {filter.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap justify-center gap-2 max-w-3xl mx-auto px-4">
+          {extraFilters.map((filter) => {
+            const active = isFilterActive(filter);
+            return (
+              <button
+                key={filter.label}
+                onClick={() => handleFilterToggle(filter)}
+                className={`px-3.5 py-1 rounded-full text-xs font-medium transition border cursor-pointer ${
+                  active
+                    ? "bg-white text-blue-700 font-bold border-white shadow-sm scale-105"
+                    : "bg-white/10 hover:bg-white/20 text-white border-white/20 hover:scale-105"
+                }`}
+              >
+                {filter.label}
+              </button>
+            );
+          })}
         </div>
       )}
-
-      {/* Clear All Button (Only visible if filters are active) */}
-      {hasFilters && (
-        <button
-          onClick={clearAll}
-          className="flex items-center gap-2 text-white/80 hover:text-white hover:bg-white/10 px-4 py-1.5 rounded-full text-sm transition mt-2 border border-transparent hover:border-white/10"
-        >
-          <X className="w-4 h-4" />
-          Clear all filters
-        </button>
-      )}
-
     </div>
   );
 }

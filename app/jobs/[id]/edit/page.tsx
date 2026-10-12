@@ -1,25 +1,34 @@
 import { connectDB } from "@/lib/db";
 import Job from "@/models/Job";
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import EditJobForm from "@/components/EditJobForm"; // 👈 Import the new component
+import { notFound, redirect } from "next/navigation";
+import EditJobForm from "@/components/EditJobForm";
+import { getAuthenticatedUser } from "@/lib/auth";
+import mongoose from "mongoose";
 
 export default async function EditJobPage({ params }: { params: Promise<{ id: string }> }) {
-  const { userId } = await auth();
-  if (!userId) redirect("/");
+  const authContext = await getAuthenticatedUser();
+  if (!authContext) redirect("/recruiter-login");
+  if (authContext.role !== "recruiter") redirect("/");
 
   const { id } = await params;
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    notFound();
+  }
 
   await connectDB();
   
-  // Use .lean() to get a plain JavaScript object
   const jobDoc = await Job.findById(id).lean();
 
-  if (!jobDoc || jobDoc.clerkId !== userId) {
+  if (!jobDoc) {
+    notFound();
+  }
+
+  // Enforce ownership: only the posting recruiter can edit their job
+  if (jobDoc.clerkId !== authContext.userId) {
     redirect("/dashboard");
   }
 
-  // 👇 Serialize data: Convert ObjectId and Dates to strings to pass to Client Component
+  // Serialize data to pass to Client Component
   const job = {
     _id: jobDoc._id.toString(),
     title: jobDoc.title,
@@ -33,8 +42,6 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
   return (
     <div className="max-w-3xl mx-auto py-10 px-6 font-sans">
       <h1 className="text-3xl font-extrabold text-gray-900 mb-8">Edit Job Posting</h1>
-      
-      {/* 👇 Pass the data to the Client Component */}
       <EditJobForm job={job} />
     </div>
   );
