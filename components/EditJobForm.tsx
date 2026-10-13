@@ -27,30 +27,51 @@ export default function EditJobForm({ job }: EditJobFormProps) {
   // Bind the Job ID to the server action so it knows which job to update
   const updateJobWithId = updateJob.bind(null, job._id);
 
-  async function handleSubmit(formData: FormData) {
-    setErrorMessage(null);
 
-    const plainText = description.replace(/<[^>]*>/g, " ").trim();
-    if (!plainText) {
-      setErrorMessage("Job description cannot be empty.");
-      return;
-    }
+async function handleSubmit(formData: FormData) {
+  setErrorMessage(null);
 
-    setIsSubmitting(true);
-    
-    // Manually append the rich text description to FormData
-    formData.set("description", description);
+  const plainText = description.replace(/<[^>]*>/g, " ").trim();
 
-    try {
-      // Call the server action
-      await updateJobWithId(formData);
-    } catch (err: unknown) {
-      console.error("Update error:", err);
-      const msg = err instanceof Error ? err.message : "Failed to update job posting. Please try again.";
-      setErrorMessage(msg);
-      setIsSubmitting(false); 
-    }
+  if (!plainText) {
+    setErrorMessage("Job description cannot be empty.");
+    return;
   }
+
+  setIsSubmitting(true);
+
+  // Append the rich-text description to FormData.
+  formData.set("description", description);
+
+  try {
+    // updateJob redirects to /dashboard after a successful update.
+    await updateJobWithId(formData);
+  } catch (err: unknown) {
+    // A Next.js redirect is represented internally by NEXT_REDIRECT.
+    // Let Next.js handle that redirect instead of displaying an error.
+    if (
+      err &&
+      typeof err === "object" &&
+      "digest" in err &&
+      typeof err.digest === "string" &&
+      err.digest.startsWith("NEXT_REDIRECT")
+    ) {
+      throw err;
+    }
+
+    console.error("Update error:", err);
+
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Failed to update job posting. Please try again.";
+
+    setErrorMessage(msg);
+  } finally {
+    setIsSubmitting(false);
+  }
+}
+
 
   return (
     <form action={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
