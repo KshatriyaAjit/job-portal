@@ -7,7 +7,7 @@ import { buildSearchPath } from "@/lib/search-params";
 
 interface FilterDef {
   label: string;
-  key: "location" | "type" | "query" | "minSalary";
+  key: "location" | "type" | "query" | "minSalary" | "category";
   val: string;
 }
 
@@ -21,17 +21,17 @@ export default function QuickFilters() {
     { label: "🌎 Remote", key: "location", val: "Remote" },
     { label: "💻 Full-time", key: "type", val: "Full-time" },
     { label: "🎓 Internship", key: "type", val: "Internship" },
-    { label: "⚙️ Engineering", key: "query", val: "Engineering" },
-    { label: "🎨 Design", key: "query", val: "Design" },
+    { label: "⚙️ Engineering", key: "category", val: "Engineering" },
+    { label: "🎨 Design", key: "category", val: "Design" },
   ];
 
   const extraFilters: FilterDef[] = [
     { label: "💰 $100k+", key: "minSalary", val: "100000" },
     { label: "📝 Contract", key: "type", val: "Contract" },
-    { label: "🚀 Startup", key: "query", val: "Startup" },
-    { label: "🧠 Data Science", key: "query", val: "Data" },
-    { label: "📱 Mobile Dev", key: "query", val: "Mobile" },
-    { label: "👔 Management", key: "query", val: "Manager" },
+    { label: "🚀 Startup", key: "category", val: "Startup" },
+    { label: "🧠 Data Science", key: "category", val: "Data Science" },
+    { label: "📱 Mobile Dev", key: "category", val: "Mobile Development" },
+    { label: "👔 Management", key: "category", val: "Management" },
   ];
 
   function isFilterActive(filter: FilterDef): boolean {
@@ -73,6 +73,7 @@ export default function QuickFilters() {
   const hasAnyFilter = Boolean(
     searchParams.get("query") ||
     searchParams.get("location") ||
+    searchParams.get("category") ||
     searchParams.get("type") ||
     searchParams.get("minSalary")
   );

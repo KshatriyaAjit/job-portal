@@ -44,6 +44,28 @@ export default async function Home({ searchParams }: PageProps) {
     const safeLocation = escapeRegex(parsed.location);
     filter.location = { $regex: safeLocation, $options: "i" };
   }
+  if (parsed.category) {
+    if (parsed.category === "Other") {
+      const categoryCondition = {
+        $or: [
+          { category: "Other" },
+          { category: { $exists: false } },
+          { category: null },
+        ],
+      };
+      if (filter.$or) {
+        filter.$and = [
+          { $or: filter.$or },
+          categoryCondition,
+        ];
+        delete filter.$or;
+      } else {
+        filter.$or = categoryCondition.$or;
+      }
+    } else {
+      filter.category = parsed.category;
+    }
+  }
   if (parsed.minSalary) {
     filter.salary = { $gte: parsed.minSalary };
   }
@@ -88,7 +110,7 @@ export default async function Home({ searchParams }: PageProps) {
     : null;
 
   const hasActiveFilters = Boolean(
-    parsed.query || parsed.location || parsed.minSalary || (parsed.type && parsed.type.length > 0)
+    parsed.query || parsed.location || parsed.category || parsed.minSalary || (parsed.type && parsed.type.length > 0)
   );
 
   return (

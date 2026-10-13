@@ -104,15 +104,17 @@ describe("Privileged Server Actions Authorization & Security", () => {
       formData.append("location", "New York");
       formData.append("salary", "120000");
       formData.append("jobType", "Full-time");
+      formData.append("category", "Engineering");
 
       const result = await createJob(formData);
       expect(result.success).toBe(true);
       expect(result.jobId).toBe(fakeJobId.toString());
 
-      // Verify that Job.create received SANITIZED HTML without <script>
+      // Verify that Job.create received SANITIZED HTML without <script> and valid category
       expect(Job.create).toHaveBeenCalledWith(
         expect.objectContaining({
           description: "<p>Safe info</p>",
+          category: "Engineering",
           clerkId: "recruiter_1",
         })
       );
@@ -133,8 +135,49 @@ describe("Privileged Server Actions Authorization & Security", () => {
       formData.append("location", "Remote");
       formData.append("salary", "-500");
       formData.append("jobType", "InvalidType");
+      formData.append("category", "Engineering");
 
       await expect(createJob(formData)).rejects.toThrow();
+    });
+
+    it("rejects missing or empty category in createJob", async () => {
+      vi.spyOn(authLib, "requireRecruiter").mockResolvedValue({
+        userId: "recruiter_1",
+        email: "recruiter@example.com",
+        role: "recruiter",
+        dbUser: {} as unknown as InstanceType<typeof User>,
+      });
+
+      const formData = new FormData();
+      formData.append("title", "Frontend Dev");
+      formData.append("description", "<p>React</p>");
+      formData.append("companyName", "Acme");
+      formData.append("location", "Remote");
+      formData.append("salary", "100000");
+      formData.append("jobType", "Full-time");
+      // Omit category
+
+      await expect(createJob(formData)).rejects.toThrow("Job category is required.");
+    });
+
+    it("rejects invalid category enum in createJob", async () => {
+      vi.spyOn(authLib, "requireRecruiter").mockResolvedValue({
+        userId: "recruiter_1",
+        email: "recruiter@example.com",
+        role: "recruiter",
+        dbUser: {} as unknown as InstanceType<typeof User>,
+      });
+
+      const formData = new FormData();
+      formData.append("title", "Frontend Dev");
+      formData.append("description", "<p>React</p>");
+      formData.append("companyName", "Acme");
+      formData.append("location", "Remote");
+      formData.append("salary", "100000");
+      formData.append("jobType", "Full-time");
+      formData.append("category", "InvalidCategory");
+
+      await expect(createJob(formData)).rejects.toThrow("Invalid job category. Must be one of:");
     });
   });
 

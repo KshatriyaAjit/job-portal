@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createJob } from "@/app/actions"; // Imports the Server Action
 import RichTextEditor from "@/components/RichTextEditor";
 import { useRouter } from "next/navigation";
+import { JOB_CATEGORIES } from "@/lib/categories";
 
 import { AlertCircle, Loader2 } from "lucide-react";
 
@@ -95,8 +96,8 @@ export default function PostJobPage() {
           </div>
         </div>
 
-        {/* Salary & Type */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Salary, Type & Category */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Annual Salary ($)</label>
             <input 
@@ -119,6 +120,22 @@ export default function PostJobPage() {
               <option value="Part-time">Part-time</option>
               <option value="Contract">Contract</option>
               <option value="Internship">Internship</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Job Category</label>
+            <select 
+              name="category" 
+              required
+              defaultValue=""
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer"
+            >
+              <option value="" disabled>Select a Category</option>
+              {JOB_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
           </div>
         </div>

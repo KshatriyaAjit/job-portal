@@ -104,6 +104,11 @@ export default async function JobDetailsPage({ params }: JobPageProps) {
                       <span className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-md border border-gray-200 font-medium text-sm">
                           <Briefcase className="w-4 h-4" /> {job.jobType}
                       </span>
+                      {job.category && (
+                        <span className="flex items-center gap-1.5 bg-purple-50 text-purple-700 px-3 py-1.5 rounded-md border border-purple-200 font-medium text-sm">
+                            🏷️ {job.category}
+                        </span>
+                      )}
                   </div>
 
                   {/* Description */}

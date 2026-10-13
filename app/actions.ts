@@ -2,7 +2,7 @@
 
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { connectDB } from "@/lib/db";
-import Job, { IJob } from "@/models/Job";
+import Job, { IJob, JOB_CATEGORIES, isValidJobCategory } from "@/models/Job";
 import Application, { ApplicationStatus, APPLICATION_STATUSES } from "@/models/Application";
 import SavedJob from "@/models/SavedJob";
 import Profile from "@/models/Profile";
@@ -37,9 +37,18 @@ export async function createJob(formData: FormData): Promise<{ success: boolean;
   const location = (formData.get("location") as string)?.trim();
   const salaryString = formData.get("salary") as string;
   const jobType = (formData.get("jobType") as string)?.trim();
+  const category = (formData.get("category") as string)?.trim();
 
   if (!title || !companyName || !location || !salaryString) {
     throw new Error("Missing required job fields.");
+  }
+
+  if (!category) {
+    throw new Error("Job category is required.");
+  }
+
+  if (!isValidJobCategory(category)) {
+    throw new Error(`Invalid job category. Must be one of: ${JOB_CATEGORIES.join(", ")}`);
   }
 
   const salary = Number(salaryString);
@@ -65,6 +74,7 @@ export async function createJob(formData: FormData): Promise<{ success: boolean;
     location,
     salary,
     jobType,
+    category,
     clerkId: authUser.userId,
   });
 
@@ -360,9 +370,18 @@ export async function updateJob(jobId: string, formData: FormData): Promise<void
   const salaryString = formData.get("salary") as string;
   const salary = Number(salaryString);
   const jobType = (formData.get("jobType") as string)?.trim();
+  const category = (formData.get("category") as string)?.trim();
 
   if (!title || !companyName || !location || !salaryString) {
     throw new Error("Missing required job fields.");
+  }
+
+  if (!category) {
+    throw new Error("Job category is required.");
+  }
+
+  if (!isValidJobCategory(category)) {
+    throw new Error(`Invalid job category. Must be one of: ${JOB_CATEGORIES.join(", ")}`);
   }
 
   if (isNaN(salary) || salary <= 0 || salary > 50_000_000) {
@@ -386,6 +405,7 @@ export async function updateJob(jobId: string, formData: FormData): Promise<void
     location,
     salary,
     jobType,
+    category,
   });
 
   // Invalidate stale cached AI evaluations for this job since job requirements have changed

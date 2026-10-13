@@ -2,9 +2,12 @@
  * Utilities for URL search parameter manipulation and validation in Insider Jobs.
  */
 
+import { isValidJobCategory } from "@/lib/categories";
+
 export interface ParsedJobFilters {
   query?: string;
   location?: string;
+  category?: string;
   type?: string[];
   minSalary?: number;
   sort?: "newest" | "oldest" | "salary_high" | "salary_low";
@@ -19,6 +22,14 @@ const VALID_SORTS = ["newest", "oldest", "salary_high", "salary_low"] as const;
 export function normalizeJobSearchParams(rawParams: Record<string, string | undefined>): ParsedJobFilters {
   const query = rawParams.query?.trim().slice(0, 100) || undefined;
   const location = rawParams.location?.trim().slice(0, 100) || undefined;
+
+  let category: string | undefined = undefined;
+  if (rawParams.category) {
+    const trimmedCat = rawParams.category.trim();
+    if (isValidJobCategory(trimmedCat)) {
+      category = trimmedCat;
+    }
+  }
 
   // Types: comma-separated list of valid types
   let types: string[] | undefined = undefined;
@@ -59,6 +70,7 @@ export function normalizeJobSearchParams(rawParams: Record<string, string | unde
   return {
     query,
     location,
+    category,
     type: types,
     minSalary,
     sort,

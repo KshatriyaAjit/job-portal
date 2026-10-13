@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { buildSearchPath } from "@/lib/search-params";
 import { RotateCcw } from "lucide-react";
+import { JOB_CATEGORIES } from "@/lib/categories";
 
 export default function FilterSidebar() {
   const router = useRouter();
@@ -11,12 +12,14 @@ export default function FilterSidebar() {
 
   // Derive filter state directly from URL searchParams without local state lag
   const minSalary = searchParams.get("minSalary") || "";
+  const selectedCategory = searchParams.get("category") || "";
   const jobTypes = searchParams.get("type")?.split(",").map((t) => t.trim()).filter(Boolean) || [];
 
-  const updateFilters = (salary: string, types: string[]) => {
+  const updateFilters = (salary: string, types: string[], category: string) => {
     const nextPath = buildSearchPath(pathname, searchParams, {
       minSalary: salary || null,
       type: types.length > 0 ? types.join(",") : null,
+      category: category || null,
       page: null, // Reset to first page whenever filtering changes
     });
 
@@ -24,26 +27,31 @@ export default function FilterSidebar() {
   };
 
   const handleSalaryChange = (value: string) => {
-    updateFilters(value, jobTypes);
+    updateFilters(value, jobTypes, selectedCategory);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    updateFilters(minSalary, jobTypes, value);
   };
 
   const handleTypeChange = (type: string) => {
     const updated = jobTypes.includes(type)
       ? jobTypes.filter((t) => t !== type)
       : [...jobTypes, type];
-    updateFilters(minSalary, updated);
+    updateFilters(minSalary, updated, selectedCategory);
   };
 
   const clearSidebarFilters = () => {
     const nextPath = buildSearchPath(pathname, searchParams, {
       minSalary: null,
       type: null,
+      category: null,
       page: null,
     });
     router.push(nextPath);
   };
 
-  const hasSidebarFilters = Boolean(minSalary || jobTypes.length > 0);
+  const hasSidebarFilters = Boolean(minSalary || jobTypes.length > 0 || selectedCategory);
 
   return (
     <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit w-full md:w-64">
@@ -58,6 +66,23 @@ export default function FilterSidebar() {
             <RotateCcw className="w-3 h-3" /> Reset
           </button>
         )}
+      </div>
+
+      {/* Category Filter */}
+      <div className="mb-6">
+        <label className="text-sm font-semibold text-gray-700 mb-2 block">Job Category</label>
+        <select 
+          value={selectedCategory} 
+          onChange={(e) => handleCategoryChange(e.target.value)}
+          className="w-full border border-gray-300 p-2.5 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none transition cursor-pointer"
+        >
+          <option value="">All Categories</option>
+          {JOB_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Salary Filter */}

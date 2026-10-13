@@ -105,9 +105,65 @@ describe("Phase 1.1 — Search, Filter, Sort & Pagination Parameter Correctness"
     const qs = buildQueryString(params, {
       type: "Full-time",
       minSalary: "100000",
+      category: "Engineering",
     });
 
-    expect(qs).toBe("query=Engineer&location=Remote&type=Full-time&minSalary=100000");
+    expect(qs).toBe("query=Engineer&location=Remote&type=Full-time&minSalary=100000&category=Engineering");
+  });
+
+  describe("Category search parameter normalization and preservation", () => {
+    it("normalizes canonical category names safely and trims whitespace", () => {
+      const parsed = normalizeJobSearchParams({
+        category: "  Data Science  ",
+      });
+      expect(parsed.category).toBe("Data Science");
+    });
+
+    it("discards unlisted or malformed category names", () => {
+      expect(normalizeJobSearchParams({ category: "UnknownCategory" }).category).toBeUndefined();
+      expect(normalizeJobSearchParams({ category: "engineering" }).category).toBeUndefined(); // strict case
+      expect(normalizeJobSearchParams({ category: "" }).category).toBeUndefined();
+    });
+
+    it("preserves category while navigating pages and resets page on category change", () => {
+      const currentParams = {
+        category: "Engineering",
+        location: "Remote",
+        page: "2",
+      };
+
+      // Page change preserves category
+      const pagePath = buildSearchPath("/", currentParams, { page: "3" });
+      expect(pagePath).toContain("category=Engineering");
+      expect(pagePath).toContain("location=Remote");
+      expect(pagePath).toContain("page=3");
+
+      // Category toggle resets page to 1
+      const categoryPath = buildSearchPath("/", currentParams, {
+        category: "Design",
+        page: null,
+      });
+      expect(categoryPath).toContain("category=Design");
+      expect(categoryPath).toContain("location=Remote");
+      expect(categoryPath).not.toContain("page=");
+    });
+
+    it("clearing category preserves query, location, salary, and job type", () => {
+      const currentParams = {
+        query: "Lead",
+        location: "New York",
+        category: "Management",
+        type: "Full-time",
+        minSalary: "150000",
+      };
+
+      const clearedPath = buildSearchPath("/", currentParams, { category: null });
+      expect(clearedPath).not.toContain("category");
+      expect(clearedPath).toContain("query=Lead");
+      expect(clearedPath).toContain("location=New+York");
+      expect(clearedPath).toContain("type=Full-time");
+      expect(clearedPath).toContain("minSalary=150000");
+    });
   });
 });
 

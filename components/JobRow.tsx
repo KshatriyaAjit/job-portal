@@ -8,6 +8,7 @@ interface JobProps {
     companyName: string;
     location: string;
     salary: number;
+    category?: string;
     createdAt: string;
   };
   actionButton?: ReactNode; // 👈 1. New prop for the heart button
@@ -29,6 +30,11 @@ export default function JobRow({ job, actionButton }: JobProps) {
             <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full border border-gray-200">
               📍 {job.location}
             </span>
+            {job.category && (
+              <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full border border-purple-100">
+                🏷️ {job.category}
+              </span>
+            )}
             <span className="bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100">
               💵 ${job.salary.toLocaleString()}
             </span>

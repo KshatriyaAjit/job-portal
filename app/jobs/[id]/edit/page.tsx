@@ -36,6 +36,7 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
     location: jobDoc.location,
     salary: jobDoc.salary,
     jobType: jobDoc.jobType,
+    category: jobDoc.category || "Other",
     description: jobDoc.description,
   };
 

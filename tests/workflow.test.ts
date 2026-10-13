@@ -282,6 +282,7 @@ describe("Phase 3.1 — End-to-End Candidate to Recruiter Workflow & Negative Sc
       editFormData.append("location", "Remote");
       editFormData.append("salary", "160000");
       editFormData.append("jobType", "Full-time");
+      editFormData.append("category", "Engineering");
       editFormData.append("description", "<p>Updated requirements for Lead Architect</p>");
 
       await updateJob(fakeJobId.toString(), editFormData);

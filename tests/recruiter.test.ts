@@ -71,6 +71,7 @@ describe("Phase 2 — Recruiter Workflows, Job Validation & Applicant Management
       formDataZero.append("location", "Remote");
       formDataZero.append("salary", "0");
       formDataZero.append("jobType", "Full-time");
+      formDataZero.append("category", "Engineering");
       formDataZero.append("description", "<p>Build apps</p>");
 
       await expect(createJob(formDataZero)).rejects.toThrow(
@@ -83,6 +84,7 @@ describe("Phase 2 — Recruiter Workflows, Job Validation & Applicant Management
       formDataNegative.append("location", "Remote");
       formDataNegative.append("salary", "-1000");
       formDataNegative.append("jobType", "Full-time");
+      formDataNegative.append("category", "Engineering");
       formDataNegative.append("description", "<p>Build apps</p>");
 
       await expect(createJob(formDataNegative)).rejects.toThrow(
@@ -104,6 +106,7 @@ describe("Phase 2 — Recruiter Workflows, Job Validation & Applicant Management
       formData.append("location", "Remote");
       formData.append("salary", "999999999");
       formData.append("jobType", "Full-time");
+      formData.append("category", "Engineering");
       formData.append("description", "<p>Valid</p>");
 
       await expect(createJob(formData)).rejects.toThrow(
@@ -125,6 +128,7 @@ describe("Phase 2 — Recruiter Workflows, Job Validation & Applicant Management
       formDataEmpty.append("location", "Remote");
       formDataEmpty.append("salary", "80000");
       formDataEmpty.append("jobType", "Full-time");
+      formDataEmpty.append("category", "Engineering");
       formDataEmpty.append("description", "   <p><br></p>   ");
 
       await expect(createJob(formDataEmpty)).rejects.toThrow("Job description cannot be empty.");
@@ -179,6 +183,7 @@ describe("Phase 2 — Recruiter Workflows, Job Validation & Applicant Management
       formDataBadSalary.append("location", "Remote");
       formDataBadSalary.append("salary", "0");
       formDataBadSalary.append("jobType", "Full-time");
+      formDataBadSalary.append("category", "Engineering");
       formDataBadSalary.append("description", "<p>Desc</p>");
 
       await expect(updateJob(jobId.toString(), formDataBadSalary)).rejects.toThrow(
@@ -191,10 +196,90 @@ describe("Phase 2 — Recruiter Workflows, Job Validation & Applicant Management
       formDataBadDesc.append("location", "Remote");
       formDataBadDesc.append("salary", "120000");
       formDataBadDesc.append("jobType", "Full-time");
+      formDataBadDesc.append("category", "Engineering");
       formDataBadDesc.append("description", "<p>   </p>");
 
       await expect(updateJob(jobId.toString(), formDataBadDesc)).rejects.toThrow(
         "Job description cannot be empty."
+      );
+    });
+
+    it("rejects missing or invalid category on updateJob", async () => {
+      vi.spyOn(authLib, "requireRecruiter").mockResolvedValue({
+        userId: "recruiter_1",
+        email: "owner@test.com",
+        role: "recruiter",
+        dbUser: {} as unknown as InstanceType<typeof User>,
+      });
+
+      const jobId = new mongoose.Types.ObjectId();
+      vi.spyOn(Job, "findById").mockResolvedValue({
+        _id: jobId,
+        clerkId: "recruiter_1",
+      } as unknown as ReturnType<typeof Job.findById>);
+
+      // Missing category
+      const formDataMissing = new FormData();
+      formDataMissing.append("title", "Title");
+      formDataMissing.append("companyName", "Corp");
+      formDataMissing.append("location", "Remote");
+      formDataMissing.append("salary", "120000");
+      formDataMissing.append("jobType", "Full-time");
+      formDataMissing.append("description", "<p>Desc</p>");
+
+      await expect(updateJob(jobId.toString(), formDataMissing)).rejects.toThrow(
+        "Job category is required."
+      );
+
+      // Invalid category
+      const formDataInvalid = new FormData();
+      formDataInvalid.append("title", "Title");
+      formDataInvalid.append("companyName", "Corp");
+      formDataInvalid.append("location", "Remote");
+      formDataInvalid.append("salary", "120000");
+      formDataInvalid.append("jobType", "Full-time");
+      formDataInvalid.append("category", "BogusCategory");
+      formDataInvalid.append("description", "<p>Desc</p>");
+
+      await expect(updateJob(jobId.toString(), formDataInvalid)).rejects.toThrow(
+        "Invalid job category. Must be one of:"
+      );
+    });
+
+    it("persists updated category when valid", async () => {
+      vi.spyOn(authLib, "requireRecruiter").mockResolvedValue({
+        userId: "recruiter_1",
+        email: "owner@test.com",
+        role: "recruiter",
+        dbUser: {} as unknown as InstanceType<typeof User>,
+      });
+
+      const jobId = new mongoose.Types.ObjectId();
+      vi.spyOn(Job, "findById").mockResolvedValue({
+        _id: jobId,
+        clerkId: "recruiter_1",
+      } as unknown as ReturnType<typeof Job.findById>);
+
+      const updateSpy = vi.spyOn(Job, "findByIdAndUpdate").mockResolvedValue({} as never);
+      vi.spyOn(Application, "updateMany").mockResolvedValue({} as never);
+
+      const formDataValid = new FormData();
+      formDataValid.append("title", "Lead Designer");
+      formDataValid.append("companyName", "Design Co");
+      formDataValid.append("location", "Remote");
+      formDataValid.append("salary", "140000");
+      formDataValid.append("jobType", "Full-time");
+      formDataValid.append("category", "Design");
+      formDataValid.append("description", "<p>Updated design role description</p>");
+
+      await updateJob(jobId.toString(), formDataValid);
+
+      expect(updateSpy).toHaveBeenCalledWith(
+        jobId.toString(),
+        expect.objectContaining({
+          category: "Design",
+          title: "Lead Designer",
+        })
       );
     });
   });
